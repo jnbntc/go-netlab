@@ -1,0 +1,93 @@
+{{template "header.html" .}}
+
+<div class="mb-3">
+    <a href="/" class="text-decoration-none text-secondary font-monospace small">&larr; Volver al Dashboard</a>
+</div>
+
+<div class="card bg-dark border border-secondary-subtle mb-4 shadow">
+    <div class="card-header border-bottom border-secondary-subtle bg-transparent py-3">
+        <h5 class="mb-0 font-monospace text-primary">&gt; HTTP/S &amp; TLS Security Inspector</h5>
+    </div>
+    <div class="card-body p-4">
+        <form method="get" action="/headers">
+            <div class="row g-3">
+                <div class="col-md-10">
+                    <label class="form-label text-secondary small font-monospace">ENDPOINT URL</label>
+                    <input type="text" name="url" value="{{.Target}}" class="form-control font-monospace bg-black border-secondary text-light" placeholder="Ej: https://10.6.10.1 o google.com" required autofocus>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary font-monospace w-100">Inspeccionar &rarr;</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{if .Error}}
+<div class="alert alert-danger border-danger font-monospace" role="alert">
+    <strong>[INSPECTION FAILED]</strong> {{.Error}}
+</div>
+{{end}}
+
+{{if .Result}}
+<div class="row g-4 mb-4 font-monospace">
+    <div class="col-md-6">
+        <div class="card bg-dark border border-secondary-subtle h-100 p-3">
+            <div class="text-secondary small">HTTP RESPONSE STATUS</div>
+            <div class="d-flex align-items-center gap-3 mt-2">
+                <span class="badge {{if lt .Result.StatusCode 300}}bg-success{{else if lt .Result.StatusCode 400}}bg-warning text-dark{{else}}bg-danger{{end}} fs-6">
+                    {{.Result.StatusCode}}
+                </span>
+                <span class="fs-5 fw-bold text-light">{{.Result.Status}}</span>
+            </div>
+            <div class="text-secondary small mt-2">Protocolo: <span class="text-info">{{.Result.Proto}}</span></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card bg-dark border border-secondary-subtle h-100 p-3">
+            <div class="text-secondary small">TLS CRYPTO HANDSHAKE</div>
+            {{if .Result.IsTLS}}
+            <div class="mt-2 text-light">
+                <span class="badge bg-primary me-2">{{.Result.TLSVersion}}</span>
+                <span class="small text-secondary">{{.Result.TLSCipher}}</span>
+            </div>
+            <div class="text-secondary small mt-2">
+                Emisor: <strong class="text-warning">{{.Result.CertIssuer}}</strong> | Vence: {{.Result.CertExpiry}}
+            </div>
+            {{else}}
+            <div class="mt-2 text-danger fw-bold">[!] Conexión en texto plano (HTTP No Cifrado)</div>
+            {{end}}
+        </div>
+    </div>
+</div>
+
+<div class="card bg-dark border border-secondary-subtle shadow">
+    <div class="card-header border-bottom border-secondary-subtle py-3">
+        <span class="font-monospace text-secondary small">RAW RESPONSE HEADERS // Target: <strong class="text-light">{{.Result.URL}}</strong></span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 font-monospace align-middle">
+                <thead class="border-bottom border-secondary text-secondary">
+                    <tr>
+                        <th class="py-3 ps-4" style="width: 30%;">HEADER KEY</th>
+                        <th class="py-3">VALUE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range $key, $values := .Result.Headers}}
+                    <tr>
+                        <td class="ps-4 text-info fw-bold">{{$key}}</td>
+                        <td class="text-light text-break">
+                            {{range $values}}<div>{{.}}</div>{{end}}
+                        </td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{template "footer.html" .}}

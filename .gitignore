@@ -1,0 +1,10 @@
+# Binarios
+gateway
+*.exe
+
+# Bases de datos embebidas locales
+*.db
+*.bolt
+
+# Configuración local
+.env

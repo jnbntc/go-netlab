@@ -1,0 +1,45 @@
+{{template "header.html" .}}
+
+<div class="mb-3">
+    <a href="/" class="text-decoration-none text-secondary font-monospace small">&larr; Volver al Dashboard</a>
+</div>
+
+<div class="card bg-dark border border-secondary-subtle mb-4 shadow">
+    <div class="card-header border-bottom border-secondary-subtle bg-transparent py-3">
+        <h5 class="mb-0 font-monospace text-primary">&gt; Raw TCP Socket Whois Resolver (RFC 3912)</h5>
+    </div>
+    <div class="card-body p-4">
+        <form method="get" action="/whois">
+            <div class="row g-3">
+                <div class="col-md-10">
+                    <label class="form-label text-secondary small font-monospace">DOMAIN NAME OR IP ADDRESS / ASN</label>
+                    <input type="text" name="target" value="{{.Target}}" class="form-control font-monospace bg-black border-secondary text-light" placeholder="Ej: google.com, nic.ar o 8.8.8.8" required autofocus>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary font-monospace w-100">Consultar &rarr;</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{if .Error}}
+<div class="alert alert-danger border-danger font-monospace" role="alert">
+    <strong>[QUERY FAILED]</strong> {{.Error}}
+</div>
+{{end}}
+
+{{if .Result}}
+<div class="card bg-dark border border-secondary-subtle shadow mb-4">
+    <div class="card-header border-bottom border-secondary-subtle py-2 d-flex justify-content-between align-items-center">
+        <span class="font-monospace text-secondary small">REGISTRY RECORD // Target: <strong class="text-light">{{.Result.Target}}</strong></span>
+        <span class="badge bg-secondary font-monospace">Source: TCP/43 @ {{.Result.WhoisServer}}</span>
+    </div>
+    
+    <div class="card-body p-0">
+        <div class="terminal-console border-0 rounded-0 m-0" style="max-height: 550px; white-space: pre-wrap;">{{.Result.RawOutput}}</div>
+    </div>
+</div>
+{{end}}
+
+{{template "footer.html" .}}

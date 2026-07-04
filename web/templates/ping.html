@@ -1,0 +1,74 @@
+{{template "header.html" .}}
+
+<div class="mb-3">
+    <a href="/" class="text-decoration-none text-secondary font-monospace small">&larr; Volver al Dashboard</a>
+</div>
+
+<div class="card bg-dark border border-secondary-subtle mb-4 shadow">
+    <div class="card-header border-bottom border-secondary-subtle bg-transparent py-3">
+        <h5 class="mb-0 font-monospace text-primary">&gt; ICMP Echo Diagnostics (Ping)</h5>
+    </div>
+    <div class="card-body p-4">
+        <form method="get" action="/ping">
+            <div class="row g-3 mb-3">
+                <div class="col-md-8">
+                    <label class="form-label text-secondary small font-monospace">TARGET HOST / IP ADDRESS</label>
+                    <input type="text" name="host" value="{{.Host}}" class="form-control font-monospace bg-black border-secondary text-light" placeholder="Ej: 8.8.8.8 o linux.org" required autofocus>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label text-secondary small font-monospace">COUNT</label>
+                    <input type="number" name="count" value="{{if .Count}}{{.Count}}{{else}}4{{end}}" min="1" max="20" class="form-control font-monospace bg-black border-secondary text-light">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary font-monospace px-4">Disparar Sockets &rarr;</button>
+        </form>
+    </div>
+</div>
+
+{{if .Error}}
+<div class="alert alert-danger border-danger font-monospace" role="alert">
+    <strong>[EXECUTION FAILED]</strong> {{.Error}}
+</div>
+{{end}}
+
+{{if .Result}}
+<div class="card bg-dark border border-secondary-subtle shadow">
+    <div class="card-header border-bottom border-secondary-subtle d-flex justify-content-between align-items-center py-2">
+        <span class="font-monospace text-secondary small">STDOUT // Target: <strong class="text-light">{{.Result.Host}}</strong></span>
+        <span class="badge {{if eq .Result.PacketLoss 0.0}}bg-success{{else}}bg-warning text-dark{{end}} font-monospace">Loss: {{.Result.PacketLoss}}%</span>
+    </div>
+    
+    <!-- Consola STDOUT (Flujo de paquetes) -->
+    <div class="terminal-console border-0 rounded-0 m-0">
+        {{range .Result.RawOutput}}
+        <div class="mb-1 py-1 border-bottom border-dark font-monospace">
+            <span class="text-secondary me-2">&gt;</span>{{.}}
+        </div>
+        {{end}}
+    </div>
+
+    <!-- Barra de Métricas Analíticas (Pie de tarjeta) -->
+    <div class="card-footer bg-black border-top border-secondary-subtle py-3 font-monospace">
+        <div class="row text-center g-2">
+            <div class="col-6 col-md-3 border-end border-secondary-subtle">
+                <div class="text-secondary small" style="font-size: 0.75rem;">PAQUETES (TX/RX)</div>
+                <div class="fw-bold text-light mt-1">{{.Result.PacketsSent}} / {{.Result.PacketsRecv}}</div>
+            </div>
+            <div class="col-6 col-md-3 border-end border-secondary-subtle">
+                <div class="text-secondary small" style="font-size: 0.75rem;">RTT MÍNIMO</div>
+                <div class="fw-bold text-info mt-1">{{.Result.MinRtt}}</div>
+            </div>
+            <div class="col-6 col-md-3 border-end border-secondary-subtle">
+                <div class="text-secondary small" style="font-size: 0.75rem;">RTT PROMEDIO</div>
+                <div class="fw-bold text-warning mt-1">{{.Result.AvgRtt}}</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="text-secondary small" style="font-size: 0.75rem;">RTT MÁXIMO</div>
+                <div class="fw-bold text-danger mt-1">{{.Result.MaxRtt}}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{template "footer.html" .}}

@@ -1,0 +1,75 @@
+{{template "header.html" .}}
+
+<div class="mb-3">
+    <a href="/" class="text-decoration-none text-secondary font-monospace small">&larr; Volver al Dashboard</a>
+</div>
+
+<div class="card bg-dark border border-secondary-subtle mb-4 shadow">
+    <div class="card-header border-bottom border-secondary-subtle bg-transparent py-3">
+        <h5 class="mb-0 font-monospace text-primary">&gt; L3 Hop-by-Hop Route Tracer</h5>
+    </div>
+    <div class="card-body p-4">
+        <form method="get" action="/traceroute">
+            <div class="row g-3">
+                <div class="col-md-10">
+                    <label class="form-label text-secondary small font-monospace">TARGET HOST OR IP ADDRESS</label>
+                    <input type="text" name="target" value="{{.Target}}" class="form-control font-monospace bg-black border-secondary text-light" placeholder="Ej: 1.1.1.1 o google.com" required autofocus>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary font-monospace w-100">Trazar Ruta &rarr;</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{if .Error}}
+<div class="alert alert-danger border-danger font-monospace" role="alert">
+    <strong>[TRACE FAILED]</strong> {{.Error}}
+</div>
+{{end}}
+
+{{if .Result}}
+<div class="card bg-dark border border-secondary-subtle shadow mb-4">
+    <div class="card-header border-bottom border-secondary-subtle py-3 d-flex justify-content-between align-items-center">
+        <span class="font-monospace text-secondary small">PATH TOPOLOGY // Target: <strong class="text-light">{{.Result.Target}}</strong> {{if .Result.TargetIP}}({{.Result.TargetIP}}){{end}}</span>
+        <span class="badge bg-info text-dark font-monospace">Max Hops: 20</span>
+    </div>
+    
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 font-monospace align-middle">
+                <thead class="border-bottom border-secondary text-secondary">
+                    <tr>
+                        <th class="py-3 text-center" style="width: 8%;">HOP</th>
+                        <th class="py-3 ps-3" style="width: 40%;">GATEWAY / NODE</th>
+                        <th class="py-3">PROBE 1</th>
+                        <th class="py-3">PROBE 2</th>
+                        <th class="py-3">PROBE 3</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Result.Hops}}
+                    <tr class="{{if .Timeout}}table-active{{end}}">
+                        <td class="text-center fw-bold text-info border-end border-secondary-subtle">{{.HopNumber}}</td>
+                        <td class="ps-3">
+                            {{if .Timeout}}
+                            <span class="badge bg-danger font-monospace">[!] TIMEOUT / ICMP BLOCKED</span>
+                            {{else}}
+                            <span class="fw-bold text-light">{{.Host}}</span>
+                            <span class="text-secondary small d-block">{{.IP}}</span>
+                            {{end}}
+                        </td>
+                        <td class="{{if eq .RTT1 "Timeout"}}text-secondary{{else}}text-success{{end}}">{{if .RTT1}}{{.RTT1}}{{else}}-{{end}}</td>
+                        <td class="{{if eq .RTT2 "Timeout"}}text-secondary{{else}}text-success{{end}}">{{if .RTT2}}{{.RTT2}}{{else}}-{{end}}</td>
+                        <td class="{{if eq .RTT3 "Timeout"}}text-secondary{{else}}text-success{{end}}">{{if .RTT3}}{{.RTT3}}{{else}}-{{end}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{template "footer.html" .}}

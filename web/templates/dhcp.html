@@ -1,0 +1,73 @@
+{{template "header.html" .}}
+
+<div class="mb-3">
+    <a href="/" class="text-decoration-none text-secondary font-monospace small">&larr; Volver al Dashboard</a>
+</div>
+
+<div class="card bg-dark border border-secondary-subtle mb-4 shadow">
+    <div class="card-header border-bottom border-secondary-subtle bg-transparent py-3">
+        <h5 class="mb-0 font-monospace text-primary">&gt; Raw UDP Broadcast DHCP Discover (L7)</h5>
+    </div>
+    <div class="card-body p-4">
+        <form method="get" action="/dhcp">
+            <input type="hidden" name="action" value="run">
+            <div class="row g-3">
+                <div class="col-md-9">
+                    <label class="form-label text-secondary small font-monospace">INTERFAZ DE RED (OPCIONAL)</label>
+                    <input type="text" name="iface" value="{{.Iface}}" class="form-control font-monospace bg-black border-secondary text-light" placeholder="Dejar vacío para broadcast general (o especificar ej: eth0, wlan0)">
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary font-monospace w-100">Disparar Broadcast &rarr;</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{if .Error}}
+<div class="alert alert-danger border-danger font-monospace" role="alert">
+    <strong>[BROADCAST FAILED]</strong> {{.Error}}
+</div>
+{{end}}
+
+{{if .Result}}
+<div class="card bg-dark border border-secondary-subtle shadow mb-4">
+    <div class="card-header border-bottom border-secondary-subtle py-3 d-flex justify-content-between align-items-center">
+        <span class="font-monospace text-secondary small">DHCP OFFERS DETECTADOS // <strong class="text-light">{{len .Result}} servidor(es) respondieron</strong></span>
+        <span class="badge bg-success font-monospace">DORA Protocol (Step 2: Offer)</span>
+    </div>
+    
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 font-monospace align-middle">
+                <thead class="border-bottom border-secondary text-secondary">
+                    <tr>
+                        <th class="py-3 ps-4">SERVER IP</th>
+                        <th class="py-3">OFFERED IP (YOUR IP)</th>
+                        <th class="py-3">SUBNET MASK</th>
+                        <th class="py-3">GATEWAY ROUTER</th>
+                        <th class="py-3">DNS SERVERS</th>
+                        <th class="py-3">LEASE TIME</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Result}}
+                    <tr>
+                        <td class="ps-4 fw-bold text-warning">{{.ServerIP}}</td>
+                        <td class="text-success fw-bold">{{.YourIP}}</td>
+                        <td class="text-light">{{if .SubnetMask}}{{.SubnetMask}}{{else}}-{{end}}</td>
+                        <td class="text-info">{{if .Router}}{{.Router}}{{else}}-{{end}}</td>
+                        <td>
+                            {{range .DNS}}<span class="badge bg-secondary me-1">{{.}}</span>{{else}}-{{end}}
+                        </td>
+                        <td class="text-secondary">{{if .LeaseTime}}{{.LeaseTime}}{{else}}-{{end}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{template "footer.html" .}}

@@ -1,0 +1,65 @@
+{{template "header.html" .}}
+
+<div class="mb-3">
+    <a href="/" class="text-decoration-none text-secondary font-monospace small">&larr; Volver al Dashboard</a>
+</div>
+
+<div class="card bg-dark border border-secondary-subtle mb-4 shadow">
+    <div class="card-header border-bottom border-secondary-subtle bg-transparent py-3">
+        <h5 class="mb-0 font-monospace text-primary">&gt; Concurrent DNS Resolver (L7)</h5>
+    </div>
+    <div class="card-body p-4">
+        <form method="get" action="/dns">
+            <div class="row g-3">
+                <div class="col-md-10">
+                    <label class="form-label text-secondary small font-monospace">DOMAIN NAME</label>
+                    <input type="text" name="domain" value="{{.Domain}}" class="form-control font-monospace bg-black border-secondary text-light" placeholder="Ej: google.com o furlong.com.ar" required autofocus>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary font-monospace w-100">Resolver &rarr;</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{if .Error}}
+<div class="alert alert-danger border-danger font-monospace" role="alert">
+    <strong>[RESOLVE FAILED]</strong> {{.Error}}
+</div>
+{{end}}
+
+{{if .Result}}
+<div class="card bg-dark border border-secondary-subtle shadow">
+    <div class="card-header border-bottom border-secondary-subtle py-3 d-flex justify-content-between align-items-center">
+        <span class="font-monospace text-secondary small">ZONE RECORDS // Dominio: <strong class="text-light">{{.Result.Domain}}</strong></span>
+        <span class="badge bg-secondary font-monospace">Goroutines Async</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0 font-monospace align-middle">
+                <thead class="border-bottom border-secondary text-secondary">
+                    <tr>
+                        <th class="py-3 ps-4" style="width: 15%;">TYPE</th>
+                        <th class="py-3">VALUE / TARGET</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Result.Records}}
+                    <tr>
+                        <td class="ps-4">
+                            <span class="badge {{if eq .Type "A"}}bg-success{{else if eq .Type "MX"}}bg-warning text-dark{{else if eq .Type "NS"}}bg-info text-dark{{else}}bg-secondary{{end}} font-monospace">
+                                {{.Type}}
+                            </span>
+                        </td>
+                        <td class="text-light text-break">{{.Value}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{template "footer.html" .}}
