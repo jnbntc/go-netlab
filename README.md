@@ -1,50 +1,107 @@
 # go-netlab
 
-A lightweight, high-concurrency network diagnostic and troubleshooting laboratory built in Go. It provides a clean, responsive web interface (`html/template`) over a robust backend designed for local subnet auditing, protocol analysis, and real-time network discovery.
+<p>
+  <img src="https://img.shields.io/badge/Go-1.26-00ADD8?style=flat-square&logo=go&logoColor=white" alt="Go" />
+  <img src="https://img.shields.io/badge/Networking-Diagnostics-333333?style=flat-square" alt="Network Diagnostics" />
+  <img src="https://img.shields.io/badge/Platform-Linux-333333?style=flat-square&logo=linux&logoColor=white" alt="Linux" />
+</p>
 
-## Features
+A lightweight web toolbox for common network diagnostics on Linux, built in Go.
 
-* **L2 Network Discovery (ARP Scan):** Fast local subnet scanning and MAC mapping leveraging Go worker pools.
-* **Port Scanner & Nmap Utilities:** TCP/UDP port enumeration and service discovery.
-* **ICMP & Routing Diagnostics:** Real-time **Ping** and **Traceroute** execution with live latency metrics.
-* **Protocol Analyzers:**
-  * **DNS:** Direct query resolution and record inspection.
-  * **DHCP:** Lease discovery and packet diagnostics.
-  * **HTTP Headers:** Request/response header inspection and debugging.
-  * **Whois:** Domain and ASN lookup utilities.
+The project keeps the frontend deliberately simple with server-side templates and groups several day-to-day troubleshooting tools behind a single local HTTP service.
 
-## Architecture Highlights
+> **Goal:** make common network checks available from one small, understandable codebase without adding a frontend build toolchain.
 
-* **Zero Frontend Build Step:** Server-side rendered UI using Go standard library templates (`web/templates`). No Node.js, NPM, or heavy JS bundles required.
-* **Single Static Binary:** Designed for minimal runtime footprint. Compiles seamlessly to Alpine Linux or bare-metal edge devices without external libraries.
-* **Concurrent Execution:** Uses goroutines and context timeouts to prevent deadlocks and connection leaks during aggressive subnet scans.
+## What it does
 
-## Build & Deployment
+| Tool | Implementation |
+| --- | --- |
+| **Ping** | Uses `pro-bing` in unprivileged mode and reports packet loss plus min/avg/max RTT |
+| **ARP** | Reads the Linux kernel ARP cache from `/proc/net/arp`, with optional interface/VLAN filtering |
+| **DNS** | Concurrent lookups for A/AAAA, MX, NS, TXT and CNAME records |
+| **HTTP / TLS** | Inspects response headers, protocol, TLS version, cipher, certificate issuer and expiry |
+| **Nmap** | Runs Nmap profiles for fast, standard or service/version discovery |
+| **Traceroute** | Executes the system `traceroute` command and parses hops and RTTs |
+| **DHCP Discover** | Sends a DHCP broadcast and collects offers on UDP 68 |
+| **Whois** | Queries IANA over TCP/43 and follows a registry referral when available |
 
-### Standalone Static Binary (Recommended for Alpine / Edge)
-Compile without C dependencies and strip debugging symbols for minimum artifact size:
+## Architecture
 
-```bash
-CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -trimpath -o go-netlab .
+```text
+cmd/netlab-server/main.go
+        │
+        ├── internal/web/
+        │     ├── router.go
+        │     └── handlers.go
+        │
+        ├── internal/network/
+        │     ├── arp.go
+        │     ├── dhcp.go
+        │     ├── dns.go
+        │     ├── headers.go
+        │     ├── nmap.go
+        │     ├── ping.go
+        │     ├── traceroute.go
+        │     └── whois.go
+        │
+        └── web/
+              ├── templates/
+              └── static/
 ```
 
-### Run Locally
+The HTTP server listens on `:8080` and uses Go's standard `net/http` and `html/template` packages.
+
+## Requirements
+
+- Linux
+- Go 1.26.x
+- `nmap` for the Nmap page
+- `traceroute` for traceroute diagnostics
+
+The DHCP discovery tool binds UDP port 68. Depending on the host configuration, this may require elevated privileges, and it can conflict with an OS DHCP client already using that port.
+
+## Build
+
+Run from the repository root:
 
 ```bash
-# Execute the compiled binary
+CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" \
+  -o go-netlab ./cmd/netlab-server
+```
+
+## Run
+
+The templates and static assets are currently loaded from the `web/` directory at runtime, so start the server from the repository root:
+
+```bash
 ./go-netlab
-
-# Or run directly via Go toolchain
-go run main.go
 ```
 
-By default, the web interface listens on `http://localhost:8080` (or configured port via environment variables).
-
----
-
-## Security Note
-Certain L2 operations (like raw ARP scans or ICMP socket manipulation) require elevated privileges (`CAP_NET_RAW` capability or root access) depending on your host kernel configuration:
+For development:
 
 ```bash
-sudo setcap cap_net_raw+ep ./go-netlab
+go run ./cmd/netlab-server
 ```
+
+Then open:
+
+```text
+http://localhost:8080
+```
+
+## Operational notes
+
+- **ARP is passive:** the current implementation inspects the kernel ARP cache; it does not actively probe the subnet.
+- **Ping is unprivileged:** it uses the non-privileged mode provided by `pro-bing`.
+- **Nmap and traceroute are external dependencies:** the Go code invokes tooling available on the host.
+- **DHCP discovery is the exception:** binding UDP/68 may require additional privileges or a dedicated test environment.
+
+## Security
+
+Some tools in this repository can actively probe network services.
+
+Use them only on systems and networks you own or are explicitly authorized to test. For routine troubleshooting, prefer running the service with the minimum privileges required by the specific diagnostic being used.
+
+## Status
+
+This is a personal network-engineering lab rather than a finished product. The emphasis is on keeping individual diagnostics readable and easy to extend while consolidating frequently used troubleshooting workflows behind one interface.
